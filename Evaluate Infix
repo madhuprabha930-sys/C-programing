@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <ctype.h>
+
+#define MAX 100
+
+int values[MAX];
+char operators[MAX];
+
+int valueTop = -1;
+int operatorTop = -1;
+
+void pushValue(int x) {
+    values[++valueTop] = x;
+}
+
+int popValue() {
+    return values[valueTop--];
+}
+
+void pushOperator(char x) {
+    operators[++operatorTop] = x;
+}
+
+char popOperator() {
+    return operators[operatorTop--];
+}
+
+int precedence(char op) {
+    if (op == '+' || op == '-')
+        return 1;
+    if (op == '*' || op == '/')
+        return 2;
+    return 0;
+}
+
+int calculate(int a, int b, char op) {
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+    }
+    return 0;
+}
+
+int evaluate(char exp[]) {
+    int i = 0;
+
+    while (exp[i] != '\0') {
+
+        // If digit, read the complete number
+        if (isdigit(exp[i])) {
+            int num = 0;
+
+            while (isdigit(exp[i])) {
+                num = num * 10 + (exp[i] - '0');
+                i++;
+            }
+
+            pushValue(num);
+        }
+
+        // Opening parenthesis
+        else if (exp[i] == '(') {
+            pushOperator(exp[i]);
+            i++;
+        }
+
+        // Closing parenthesis
+        else if (exp[i] == ')') {
+            while (operatorTop != -1 &&
+                   operators[operatorTop] != '(') {
+
+                char op = popOperator();
+                int b = popValue();
+                int a = popValue();
+
+                pushValue(calculate(a, b, op));
+            }
+
+            popOperator(); // Remove '('
+            i++;
+        }
+
+        // Operator
+        else if (exp[i] == '+' || exp[i] == '-' ||
+                 exp[i] == '*' || exp[i] == '/') {
+
+            while (operatorTop != -1 &&
+                   operators[operatorTop] != '(' &&
+                   precedence(operators[operatorTop]) >= precedence(exp[i])) {
+
+                char op = popOperator();
+                int b = popValue();
+                int a = popValue();
+
+                pushValue(calculate(a, b, op));
+            }
+
+            pushOperator(exp[i]);
+            i++;
+        }
+
+        else {
+            i++; // Ignore spaces
+        }
+    }
+
+    // Process remaining operators
+    while (operatorTop != -1) {
+        char op = popOperator();
+        int b = popValue();
+        int a = popValue();
+
+        pushValue(calculate(a, b, op));
+    }
+
+    return popValue();
+}
+
+int main() {
+    char exp[MAX];
+
+    printf("Enter infix expression: ");
+    fgets(exp, MAX, stdin);
+
+    printf("Result = %d\n", evaluate(exp));
+
+    return 0;
+}
