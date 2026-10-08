@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 100
+
+char stack[MAX];
+int top = -1;
+
+void push(char c) {
+    stack[++top] = c;
+}
+
+char pop() {
+    return stack[top--];
+}
+
+int precedence(char c) {
+    if (c == '^')
+        return 3;
+    if (c == '*' || c == '/')
+        return 2;
+    if (c == '+' || c == '-')
+        return 1;
+    return 0;
+}
+
+void infixToPrefix(char infix[], char prefix[]) {
+    char rev[MAX];
+    int i, j = 0;
+
+    // Reverse infix expression
+    for (i = strlen(infix) - 1; i >= 0; i--) {
+        if (infix[i] == '(')
+            rev[j++] = ')';
+        else if (infix[i] == ')')
+            rev[j++] = '(';
+        else
+            rev[j++] = infix[i];
+    }
+    rev[j] = '\0';
+
+    // Convert reversed expression to postfix
+    top = -1;
+    j = 0;
+
+    for (i = 0; rev[i] != '\0'; i++) {
+        char c = rev[i];
+
+        if (isalnum(c)) {
+            prefix[j++] = c;
+        }
+        else if (c == '(') {
+            push(c);
+        }
+        else if (c == ')') {
+            while (top != -1 && stack[top] != '(')
+                prefix[j++] = pop();
+            pop(); // remove '('
+        }
+        else {
+            while (top != -1 && precedence(stack[top]) > precedence(c))
+                prefix[j++] = pop();
+
+            push(c);
+        }
+    }
+
+    while (top != -1)
+        prefix[j++] = pop();
+
+    prefix[j] = '\0';
+
+    // Reverse result to get prefix
+    for (i = 0, j = strlen(prefix) - 1; i < j; i++, j--) {
+        char temp = prefix[i];
+        prefix[i] = prefix[j];
+        prefix[j] = temp;
+    }
+}
+
+int main() {
+    char infix[MAX], prefix[MAX];
+
+    printf("Enter infix expression: ");
+    scanf("%s", infix);
+
+    infixToPrefix(infix, prefix);
+
+    printf("Prefix expression: %s\n", prefix);
+
+    return 0;
+}
